@@ -67,10 +67,14 @@ class PhotonCommand {
 	
 		switch (this.messageType) {
 		  case 2:
-			  // [TODO] On request
+			this.data = Protocol16Deserializer.deserializeOperationRequest(this.payload);
+
+			this.parent.parent.emit('request', this.data);
 			break;
 		  case 3:
-			  // [TODO] On response
+			this.data = Protocol16Deserializer.deserializeOperationResponse(this.payload);
+
+			this.parent.parent.emit('response', this.data);
 			break;
 		  case 4:
 			this.data = Protocol16Deserializer.deserializeEventData(this.payload);
