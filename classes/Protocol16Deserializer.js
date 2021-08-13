@@ -17,6 +17,8 @@ class Protocol16Deserializer {
 				return this.deserializeInteger(input);
 			case this.protocol16Type.IntegerArray:
 				return this.deserializeIntegerArray(input);
+			case this.protocol16Type.Double:
+				return this.deserializeDouble(input);
 			case this.protocol16Type.Long:
 				return this.deserializeLong(input);
 			case this.protocol16Type.Float:
@@ -27,21 +29,18 @@ class Protocol16Deserializer {
 				return this.deserializeStringArray(input);
 			case this.protocol16Type.ByteArray:
 				return this.deserializeByteArray(input);
-
-			case this.protocol16Type.Dictionary:
-				return this.deserializeDictionary(input);
-			case this.protocol16Type.Double:
-				return this.deserializeDouble(input);
 			case this.protocol16Type.EventData:
 				return this.deserializeEventData(input);
-			case this.protocol16Type.Hashtable:
-				return this.deserializeHashtable(input);
+			case this.protocol16Type.Dictionary:
+				return this.deserializeDictionary(input);
+			case this.protocol16Type.Array:
+				return this.deserializeArray(input);
 			case this.protocol16Type.OperationResponse:
 				return this.deserializeOperationResponse(input);
 			case this.protocol16Type.OperationRequest:
 				return this.deserializeOperationRequest(input);
-			case this.protocol16Type.Array:
-				return this.deserializeArray(input);
+			case this.protocol16Type.Hashtable:
+				return this.deserializeHashtable(input);
 			case this.protocol16Type.ObjectArray:
 				return this.deserializeObjectArray(input);
 			default:
@@ -74,6 +73,10 @@ class Protocol16Deserializer {
 
 	static deserializeShort(input) {
 		return input.readUInt16BE();
+	}
+
+	static deserializeDouble(input) {
+		return input.readDoubleBE();
 	}
 
 	static deserializeLong(input) {
@@ -125,11 +128,33 @@ class Protocol16Deserializer {
 		return res;
 	}
 
+	static deserializeObjectArray(input) {
+		const tableSize = this.deserializeShort(input);
+		let ouput = [];
+
+		for (let i = 0; i < tableSize; i++) {
+			const typeCode = this.deserializeByte(input);
+			ouput[i] = deserialize(input, typeCode);
+		}
+
+		return ouput;
+	}
+
+	static deserializeHashtable(input) {
+		const tableSize = this.deserializeShort(input);
+
+		return this.deserializeDictionaryElements(input, tableSize, 0, 0);
+	}
 
 	static deserializeDictionary(input) {
 		const keyTypeCode = this.deserializeByte(input);
 		const valueTypeCode = this.deserializeByte(input);
 		const dictionnarySize = this.deserializeShort(input);
+
+		return this.deserializeDictionaryElements(input, dictionnarySize, keyTypeCode, valueTypeCode);
+	}
+
+	static deserializeDictionaryElements(input, dictionnarySize, keyTypeCode, valueTypeCode) {
 		let output = {};
 
 		for (let i = 0; i < dictionnarySize; i++) {
